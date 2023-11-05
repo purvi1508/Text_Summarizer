@@ -1,11 +1,27 @@
-# Text_Summarizer
+# Text-Summarization-with-Python
+This is an extractive text summarizer built using **python** and **flask**, that takes a url, generates a summary and then displays the estimated time to read the summary.
 
-The project aims to develop a web application that generates summaries of provided texts using custom word or sentence length. The application consists of a frontend built with HTML, CSS, and JavaScript, and a backend implemented using the Flask framework.
+## How do I run it?
+1. Run app.py
+2. Click on the link on the displayed in the terminal
+3. Paste the url of the article in the url field.
+4. Click the Summarize button to get a summary.
 
-The frontend of the application provides a user-friendly interface where users can input text that they want to summarize. It allows users to specify the desired length of the summary in terms of either the number of words or the number of sentences. The frontend is designed using HTML for structuring the content, CSS for styling and layout, and JavaScript for interactivity and handling user inputs.
+## How does it work?
+- Upon receiving a url, scraper.py scrapes the text present on the website. The text is then formatted and cleant.
+- This formatted text is then passed to the summarizer.py which uses spacy  tokenizes the text into sentences and words.
+- The frequency of each word is calculated and stored in a dictionary. The frequency of each word is then normalized by dividing by the maximum frequency (this is done in order to find the relative frequency of each word).
+- Next, the sentence scores are calculated by adding the word frequency of each word present in the sentence.
+- A heap queue is then used to get sentences with the highest sentence scores.
+- The sentences are then joined to get the summary.
+- Next, the estimated reading time is calculated.
+- Finally, the title, summary and estimated reading time are displayed.
+- When a user selects a language and clicks the "Translate" button, the system initiates the translation process.
+- The system utilizes googletrans to perform the translation. This service processes the request and returns the translated summary in the chosen language.
+- The translated summary is displayed on the user interface
 
-On the backend, Flask, a Python web framework, is utilized to handle the processing and generation of the text summaries. When a user submits a text for summarization, the input is sent to the Flask server via an HTTP request. The server-side code, written in Python, takes the input text and processes it using natural language processing techniques.
-
-The summarization algorithm analyzes the input text and applies techniques such as text ranking, sentence scoring, or machine learning models to determine the most relevant sentences or key phrases. Based on the user's specified length (either in words or sentences), the algorithm selects the most important information and constructs a concise summary.
-
-Once the summary is generated, the Flask backend sends the result back to the frontend, where it is displayed to the user. The user can then view the summary and make any necessary adjustments to the desired length to refine the output.
+## Requirements
+- Python version >= 3.0
+- Spacy v3.10
+- Flask
+- Beautiful Soup v4.0 or above
