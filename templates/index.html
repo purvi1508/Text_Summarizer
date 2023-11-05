@@ -1,0 +1,72 @@
+<!-- index.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <meta name="description" content="Text Summarization Web Application">
+    <meta name="author" content="Mohit Kundu">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <title>Text Summarizer</title>
+</head>
+
+<body>
+    <label class="heading" id="heading">Text Summarizer</label>
+    <div class="container">
+        <form action="#" method="POST">
+            <label class="paste_label">Paste URL of the article below</label> <br>
+            <input type="url" name="url" autocomplete="off" placeholder="https://en.wikipedia.org/wiki/Internet"> <br>
+            <!-- Add a language selection dropdown -->
+            <label for="language">Select Translation Language:</label>
+            <select name="language" id="language">
+                <option value="en">English</option>
+                <option value="hi">Hindi</option>
+                <option value="ja">Japanese</option>
+                <option value="ko">Korean</option>
+            </select> <br>
+        
+            <button type="submit" name="summarize_btn" class="summarize_btn">Summarize</button>
+            <!-- Add a button for translation -->
+            <button type="button" name="translate_btn" class="translate_btn" onclick="translateSummary()">Translate</button>
+        </form>
+        
+        <br>
+        <label class="summary_label">Summary</label> <br>
+        <label class="article_title">{{ article_title }} {{ reading_time }}</label> <br>
+        <textarea id="summaryTextArea" name="summary" rows="10" cols="40">{{ summary }}</textarea>
+        <br>
+        <!-- Add a textarea for displaying the translated summary -->
+        <label class="translation_label">Translation</label> <br>
+        <textarea id="translation" name="translation" rows="10" cols="40"></textarea>
+    </div>
+    
+    <script>
+        function translateSummary() {
+            var targetLanguage = document.getElementById("language").value;
+            var summaryText = document.getElementById('summaryTextArea').value;
+            
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '/translate', true);
+            xhr.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    document.getElementById('translation').value = xhr.responseText;
+                } else {
+                    console.error('Translation request failed');
+                }
+            };
+            
+            var data = JSON.stringify({
+                summary: summaryText,
+                language: targetLanguage
+            });
+            
+            xhr.send(data);
+        }
+    </script>
+
+</body>
+
+</html>
