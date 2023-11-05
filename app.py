@@ -1,90 +1,66 @@
-from flask import Flask, render_template, request, flash
-import nltk
-from nltk.corpus import stopwords
-from sumy.parsers.plaintext import PlaintextParser
-from sumy.nlp.tokenizers import Tokenizer
-from sumy.summarizers.lex_rank import LexRankSummarizer
+# app.py
 
-nltk.download('stopwords')
-nltk.download('punkt')
+from flask import Flask, render_template, request
+from scraper import scraper
+from summarizer import summarizer, estimated_reading_time
+from translation import translate_to_hindi, translate_to_japanese, translate_to_korean
 
 app = Flask(__name__)
-app.secret_key = '8f42a73054b1749f8f58848be5e6502c'
+app.config["JSON_AS_ASCII"] = False
 
-@app.route('/')
+# Your existing route for handling article summarization goes here...
+
+@app.route("/", methods=['GET', 'POST'])
 def index():
-    return render_template('index.html')
-
-@app.route('/summarize', methods=['GET', 'POST'])
-def summarize():
     if request.method == 'POST':
-        # Retrieve form data
-        input_text = request.form.get('text-input')
-        selected_option = request.form.get('summary-length')
+        url = request.form.get('url')
 
-        # Validate the form data
-        if not input_text:
-            error_message = "Input text is required."
-            flash(error_message, 'error')
-            return render_template('index.html')
+        try:
+            article_title, text = scraper(url)
+            summary = summarizer(text)
+            reading_time = estimated_reading_time(summary.split())
 
-        if not selected_option:
-            error_message = "Summary length option is required."
-            flash(error_message, 'error')
-            return render_template('index.html')
+            # Get the selected language from the form
+            target_language = request.form.get('language')
 
-        # Additional validation and handling code...
-        # Perform any other required checks or validations on the form data
+            if target_language == "en":
+                translated_summary = summary  
+            elif target_language == "hi":
+                translated_summary = translate_to_hindi(summary)
+            elif target_language == "ja":
+                translated_summary = translate_to_japanese(summary)
+            elif target_language == "ko":
+                translated_summary = translate_to_korean(summary)
+        
+            return render_template("index.html", article_title=article_title, reading_time=reading_time, summary=translated_summary)
 
-        # Clean the text by removing stop words and punctuation marks
-        stop_words = set(stopwords.words("english"))
-        cleaned_text = " ".join([word for word in input_text.split() if word.lower() not in stop_words])
-        print("Cleaned Text:", cleaned_text)
+        except TypeError:
+            print('Invalid URL entered')
 
-        # Tokenize the text into sentences
-        sentences = nltk.sent_tokenize(cleaned_text)
-        print("Sentences:", sentences)
+    else:
+        return render_template("index.html")
 
-        # Get the total number of sentences
-        total_sentences = len(sentences)
-        print("Total Sentences:", total_sentences)
+@app.route("/translate", methods=['POST'])
+def translate():
+    data = request.get_json()
+    summary_text = data['summary']
+    target_language = data['language']
+    
+    print(f"Translating to language: {target_language}")
+    print(f"Original text: {summary_text}")
+    
+    if target_language == "en":
+        translated_summary = summary_text
+    elif target_language == "hi":
+        translated_summary = translate_to_hindi(summary_text)
+    elif target_language == "ja":
+        translated_summary = translate_to_japanese(summary_text)
+    elif target_language == "ko":
+        translated_summary = translate_to_korean(summary_text)
+    
+    print(f"Translated text: {translated_summary}")
+    
+    return translated_summary
 
-        # Initialize the tokenizer
-        tokenizer = Tokenizer("english")
-
-        # Initialize the summarizer
-        parser = PlaintextParser.from_string(cleaned_text, tokenizer)
-        summarizer = LexRankSummarizer()
-
-        # Determine the target word count or sentence count based on user selection
-        if selected_option == 'custom-word':
-            target_word_count = int(request.form.get('custom-word'))
-            target_sentence_count = None
-            print("Target Word Count:", target_word_count)
-        elif selected_option == 'custom-sentence':
-            target_sentence_count = int(request.form.get('custom-sentence'))
-            target_word_count = None
-            print("Target Sentence Count:", target_sentence_count)
-
-        # Perform summarization based on the selected target count
-        current_word_count = 0
-        summary_sentences = []
-        for sentence in summarizer(parser.document, sentences_count=total_sentences):
-            sentence_word_count = len(sentence.words)
-            if target_word_count is not None and current_word_count + sentence_word_count <= target_word_count:
-                summary_sentences.append(sentence)
-                current_word_count += sentence_word_count
-            elif target_sentence_count is not None and len(summary_sentences) < target_sentence_count:
-                summary_sentences.append(sentence)
-            else:
-                break
-
-        # Join the summary sentences and print the result
-        summary = " ".join(str(sentence) for sentence in summary_sentences)
-        print("Summary:", summary)
-        flash("Summary generated successfully.", 'success')
-
-        return render_template('index.html', summary=summary)
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.run(debug=True)
